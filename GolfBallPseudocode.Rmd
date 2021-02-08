@@ -1,71 +1,96 @@
 ---
-title: "Golf balls assignment - pseudocode"
-author: "Paul M"
+title: "Golf balls assignment Modified"
+author: "Paul M, Ziyi Jiang"
 date: "1/6/2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+## Assignment layout
+Instead of editing the pseudocode file, I decided to create another RMD and answer all the questions in this file. The output will be a html file. 
+
+
+## Question
+What is the distribution of these numbers? In particular, are the numbers 1, 2, 3, and 4 equally likely?
+
+
+## Hypothesis and Statistics 
+First we should set up the hypothesis of this study.  
+Let $x_i$ represents the frequency of i ball     
+$H_0$: $x_1=x_2=x_3=x_4$   
+$H_1$: any of the two are not equal     
+
+We will pick 486(137+138+104+107=486) numbers from the set {1,2,3,4} with equal probability and with replacement. Then we count the frequency of each of the four numbers. We will compute our statistics of interest. The whole process repeats for n=10000 times. At the end we will use p-value to determine whether we should reject our null hypothesis. And we will do the same for all three statistics of interest.    
+
+Some of the most commonly used statistics(function of sample variables) are order statistics and standard deviation. We will select minimum($x_1$,$x_2$,$x_3$,$x_4$), maximum($x_1$,$x_2$,$x_3$,$x_4$) and standard deviation of the samples $SD = \sqrt{\frac{1}{n-1}\Sigma(x_i - \bar{x})^2}$
+
+
+## Coding 
+```{r}
+
+# 996 is a meme among Chinese programmers 
+set.seed(996)
+
+#total simulations
+n<- 10000 
+#create 3 statistics 
+#each is a vector of numeric of length 10000
+min_stats <- numeric(n)
+max_stats <- numeric(n)
+sd_stats <- numeric(n)
+
+#these are data tallied by Allan Rossman
+observation <- c(137, 138, 104, 107)
+
+for (i in 1:n) {
+  # we sample from {1,2,3,4} with replacement 
+  samp <- sample(1:4, 486, replace = TRUE)
+  #simulation result
+  # count how many 1,2,3,4 
+  sim_res <- c(sum(samp %in% 1), sum(samp %in% 2), sum(samp %in% 3), sum(samp %in% 4))
+  
+  #fill out all three statistics 
+  min_stats[i] <- min(sim_res)
+  max_stats[i] <- max(sim_res) 
+  sd_stats[i] <- sqrt(sum(((sim_res - mean(sim_res))**2)) / length(sim_res))
+}
+
+
+
+#1st statistics 
+
+ob_min <- min(observation)
+hist(min_stats, breaks = 50, main = "Minimum(x1,x2,x3,x4)")
+abline(v = ob_min, col = "blue")
+#What percentage of the generated min_stats are actually less than our observed min
+p_val1 <- sum(min_stats <= ob_min) / n
+#print out p value 
+cat("p value for min statistics is: ",p_val1)
+
+#2nd statistics 
+ob_max <- max(observation) 
+hist(max_stats, breaks = 50, main = "Maximum(x1,x2,x3,x4)")
+abline(v = ob_max, col = "blue")
+#What percentage of the generated max_stats are actually greater than our observed max 
+p_val2 <- sum(max_stats >= ob_max) / n
+
+cat("p value for max statistic is : ",p_val2)
+
+#3rd statistics 
+ob_sd <- sd(observation)
+hist(sd_stats,breaks=50 ,main = "Standard Deviation(X1,X2,X3,X4)")
+abline(v = ob_sd, col = "blue")
+# what percentage of the generated standard deviations are larger 
+p_val3 <- sum(sd_stats >= ob_sd) / n
+
+cat("p value for SD statistic is: ", p_val3)
+
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 
-## Now onto the assignment.....
+## Final Conclusion
 
-This assignment asks you the following:
+Now we have the p-value from hypothesis testing. Min and max statistics both have p-values(0.136 and 0.183) greater than the threshold 0.05. We cannot reject the null hypothesis that four balls have the same frequency by using these two statistics. 
+Standard deviation provides us a very small p-value(0.0088<0.05). We can reject the null hypothesis based on that.    
 
-Allan Rossman used to live along a golf course and collected the golf balls that landed in his yard. Most of these golf balls had a number on them. Allan tallied the numbers on the first 500 golf balls that landed in his yard one summer.
-
-Specifically. he collected the following data:
-137  golf balls numbered 1
-138  golf balls numbered 2
-107  golf balls numbered 3
-104  golf balls numbered 4
-14 "others" (Either with a different number, or no number at all. We will ignore these other balls for the purposes of this question.)
-
-Question: What is the distribution of these numbers?
-In particular, are the numbers 1, 2, 3, and 4 equally likely?
-
-
-The intuition is that you are going to conduct a simulation-based hypothesis test. (If you happen to know the correct theoretical test, I want you to assess the significance of the associated test statistic using simulation rather than theoretical results.)
-
-Here's the pseudocode. Your job is to flesh it out, run it for at least 3 test statistics (that you have to come up with), and report on the results. Results should be turned in as a nicely formatted R-markdown doc that compiles to an html file. 
-
-```{r pseudocode}
-# Pseudocode for the golf ball problem in assignment 1
-
-# Do the following repeatedly, for each test statistic that you use.
-
-# 1 Pick a test statistic. An example might be to use the range between the highest and lowest number in the four cells of the table.
-
-# 2. We then find the behavior of the test statistic under the null hypothesis that all numbers are equally likely by repeatedly doing the following (say 10000 times):
-# 2a. Generate a simulated dataset of the same size as the one we observed. So, in this example it will contain 486 simulated golf-balls, # with the number of each being sampled from a discrete uniform distribution DU[1,4].
-# 2b. Calculate the value of the test statistic for that simulated dataset (so here, we construct a table of frequencies, just like for the observed data, and then take the difference between the larget and smallest numbers in that table). Store this value.
-
-# 3. After repeating 2a and 2b 10000 times, and storing the 10000 values of the test statistic that results, plot those values, using a histogram, say. This is the "null distribution" of the test statistic under the null hypothesis that all numbers arew equally likely.
-
-# 4. Plot the value of the test statistic for the observed dataset (which is 34 if we use the range as an example).
-
-# 5. If the observed test statistic value falls in the tails of the null distribution plotted in step 3, (quantify this using the percentile of that value in the null distribution - known as the p-value) we reject the null hypothesis that the numbers on the balls are uniformly distributed.
-
-```
